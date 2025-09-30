@@ -4,9 +4,13 @@ from django.contrib.auth.models import User
 
 
 class UserSerializer(serializers.ModelSerializer):
+
+
+    lists = serializers.PrimaryKeyRelatedField(many = True, queryset = List.objects.all())
+
     class Meta:
         model = User
-        fields = ['id','username','password']
+        fields = ['id','username','password', 'lists']
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):

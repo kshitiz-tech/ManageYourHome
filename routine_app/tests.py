@@ -1,6 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth.models import User
 from .models import List
+from routine_app.utils.total_expense import each_expense
 
 # Create your tests here.
 
@@ -86,3 +87,29 @@ class ListModelTest(TestCase):
 
         # Assert that user3 has exactly one List object in the brought_to_you field
         self.assertEqual(user3_lists.count(), 1)
+
+
+class EachExpenseTest(TestCase):
+    
+    def setUp(self):
+        self.user = User.objects.create_user(username='testuser', password='testpassword' )
+        self.user = User.objects.create_user(username='testuser2', password = 'testpass2')
+
+
+        List.objects.create(item_name = 'Item 1',category = "Groceries" , price = 6.0, brought_to = ["testuser"], brought_by = "user1")
+        List.objects.create(item_name = 'Item 2', category = "Others", price = 7.0, brought_to = ["testuser", "user1"] ,brought_by = "user2")
+        List.objects.create(item_name = "Item 3", category = "Groceries", price = 8.0, brought_to = ["testuser2", "user2"], brought_by = "user3")
+
+    def test_each_expense(self):
+        each_expense(self.user.pk)
+
+        items = List.objects.filter(brought_to = self.user.username)
+
+        self.assertEqual(items.count(), 2)
+        self.assertEqual(items[0].item_name, "Item 1")
+        self.assertEqual(items[1].item_name, "Item 2")
+        self.assertEqual(items[0].brought_to.count(), 1)
+        self.assertEqual(items[1].brought_to.count(), 2)
+
+
+

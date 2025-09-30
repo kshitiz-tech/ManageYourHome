@@ -22,7 +22,7 @@ class List(models.Model):
                                 blank = False,
                                 null= False)
     price = models.DecimalField(null= False, blank= False, decimal_places= 2, max_digits= 10000)
-    brought_by =  models.ForeignKey(User, related_name= 'brought_by', on_delete= models.CASCADE )
+    brought_by = models.ForeignKey(User, related_name= 'brought_by', on_delete= models.CASCADE )
     brought_to = models.ManyToManyField(User,related_name="brought_to_you", blank= False)
     created_at = models.DateTimeField(auto_now_add=True)
 
