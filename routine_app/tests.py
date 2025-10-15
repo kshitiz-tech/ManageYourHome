@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth.models import User
 from .models import List
-from routine_app.utils.total_expense import each_expense
+from routine_app.utils.total_expense import collect_item
 
 # Create your tests here.
 
@@ -89,27 +89,88 @@ class ListModelTest(TestCase):
         self.assertEqual(user3_lists.count(), 1)
 
 
-class EachExpenseTest(TestCase):
-    
+from django.test import TestCase
+from django.contrib.auth.models import User
+from .models import List
+from .utils.total_expense import collect_item
+from decimal import Decimal
+
+class CollectItemTest(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username='testuser', password='testpassword' )
-        self.user = User.objects.create_user(username='testuser2', password = 'testpass2')
+        """Set up test data"""
+        # Create users
+        self.buyer = User.objects.create_user(username='buyer', password='test123')
+        self.user1 = User.objects.create_user(username='user1', password='test123')
+        self.user2 = User.objects.create_user(username='user2', password='test123')
 
+        # Create grocery item (7% tax)
+        self.grocery_item = List.objects.create(
+            item_name="Milk",
+            category="grocery",
+            price=Decimal("10.00"),
+            brought_by=self.buyer
+        )
+        self.grocery_item.brought_to.add(self.user1, self.user2)
 
-        List.objects.create(item_name = 'Item 1',category = "Groceries" , price = 6.0, brought_to = ["testuser"], brought_by = "user1")
-        List.objects.create(item_name = 'Item 2', category = "Others", price = 7.0, brought_to = ["testuser", "user1"] ,brought_by = "user2")
-        List.objects.create(item_name = "Item 3", category = "Groceries", price = 8.0, brought_to = ["testuser2", "user2"], brought_by = "user3")
+        # Create other item (5% tax)
+        self.other_item = List.objects.create(
+            item_name="Lamp",
+            category="other",
+            price=Decimal("20.00"),
+            brought_by=self.buyer
+        )
+        self.other_item.brought_to.add(self.user1)
 
-    def test_each_expense(self):
-        each_expense(self.user.pk)
+    def test_collect_item_calculations(self):
+        """Test expense calculations"""
+        result = collect_item(self.buyer.pk)
 
-        items = List.objects.filter(brought_to = self.user.username)
+        # Test structure
+        self.assertIn('items', result)
+        self.assertIn('total_expense', result)
+        self.assertEqual(len(result['items']), 2)
 
-        self.assertEqual(items.count(), 2)
-        self.assertEqual(items[0].item_name, "Item 1")
-        self.assertEqual(items[1].item_name, "Item 2")
-        self.assertEqual(items[0].brought_to.count(), 1)
-        self.assertEqual(items[1].brought_to.count(), 2)
+        # Get items in order
+        milk = next(item for item in result['items'] if item['item_name'] == 'Milk')
+        lamp = next(item for item in result['items'] if item['item_name'] == 'Lamp')
 
+        # Test Milk calculations (7% tax, split between 2 users)
+        self.assertEqual(milk['price'], Decimal("10.00"))
+        self.assertEqual(milk['tax_rate'], Decimal("0.07"))
+        self.assertEqual(milk['total_with_tax'], Decimal("10.70"))
+        
+        # Test Lamp calculations (5% tax, single user)
+        self.assertEqual(lamp['price'], Decimal("20.00"))
+        self.assertEqual(lamp['tax_rate'], Decimal("0.05"))
+        self.assertEqual(lamp['total_with_tax'], Decimal("21.00"))
 
+        # Test total expense (10.70 + 21.00)
+        self.assertEqual(result['total_expense'], Decimal("31.70"))
 
+    def test_collect_item_user_shares(self):
+        """Test user share calculations"""
+        result = collect_item(self.buyer.pk)
+        
+        milk = next(item for item in result['items'] if item['item_name'] == 'Milk')
+        lamp = next(item for item in result['items'] if item['item_name'] == 'Lamp')
+
+        # Test user shares for Milk (10.70 / 2 = 5.35 each)
+        self.assertEqual(
+            milk['user_owned'][self.user1.username]['share'], 
+            Decimal("5.35")
+        )
+        self.assertEqual(
+            milk['user_owned'][self.user2.username]['share'], 
+            Decimal("5.35")
+        )
+
+        # Test user share for Lamp (21.00, single user)
+        self.assertEqual(
+            lamp['user_owned'][self.user1.username]['share'], 
+            Decimal("21.00")
+        )
+
+    def test_collect_item_invalid_user(self):
+        """Test with invalid user ID"""
+        with self.assertRaises(User.DoesNotExist):
+            collect_item(999)

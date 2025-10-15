@@ -35,36 +35,14 @@ def to_decimal(value):
 def collect_item(pk):
     
     
-    """
-    Collect items brought to the user with primary key `pk` and calculate:
-      - per-item total with tax
-      - how the item is split (shared count)
-      - the user's share for each item
-      - aggregated grocery and other totals (user's share)
-      - overall total (user's share)
-
-    Returns a dict with:
-      - items: list of per-item breakdown dicts
-      - grocery_total: Decimal
-      - other_total: Decimal
-      - total_expense: Decimal
-
-    Notes / assumptions:
-      - If List model has a ManyToManyField named `shared_with`, that is used to determine split count.
-      - Otherwise, if an item has both `brought_by` and `brought_to` and they are different users, split_count defaults to 2.
-      - Otherwise the item is treated as single-person (split_count = 1).
-      - Category string "grocery" (case-insensitive) uses 7% tax, all others use 5%.
-      - Adjust logic if your model fields differ (e.g. brought_to stored as username string).
-    """
     user_owned = {}
     total_price = Decimal("0.00")
     each_owned = Decimal("0.00")
-    items = {}
-
+    items = []
 
     try:
         user = User.objects.get(pk = pk)
-    except user.DoesNotExist:
+    except User.DoesNotExist:
         raise
     
 
@@ -83,18 +61,25 @@ def collect_item(pk):
         except Exception:
             raise
 
+    #for every item 
     for item in items_qs:
         
+        #get the price
         price = to_decimal(getattr(item, "price", 0))
+        #get the category of ti
         category = (getattr(item, "category", "") or "").strip().lower()
         tax_rate = Decimal("0.07") if category == "grocery" else Decimal("0.05")
         total_with_tax = (price *(Decimal("1.00")+ tax_rate)).quantize(Decimal("0.01"), rounding= ROUND_HALF_UP)
         total_price += total_with_tax
-        brought_to = getattr(item,"brought_to")
-        each_owned = (total_with_tax / len(brought_to)).quantize(Decimal,rounding=ROUND_HALF_UP) 
-        for user in brought_to:
-          user_owned[user]["share"] = each_owned
-          user_owned[user]["category"] = category
+
+        brought_to_count = item.brought_to.count()
+  
+        each_owned = (total_with_tax / Decimal(str(brought_to_count))).quantize(Decimal(),rounding=ROUND_HALF_UP) 
+        for user in item.brought_to.all():
+          user_owned[user.username] = {
+              "share": each_owned,
+              "category": category
+          }
 
 
         items.append({
@@ -110,10 +95,11 @@ def collect_item(pk):
      
     return {
         "items": items,
-        "total_expense": total_price
+        "total_expense": total_price.quantize(Decimal("0.01"), rounding = ROUND_HALF_UP)
     }
 
-          
+      
+
 
         
 

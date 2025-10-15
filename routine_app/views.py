@@ -3,7 +3,10 @@ from rest_framework import generics
 from django.contrib.auth.models import User
 from routine_app.models import List
 from routine_app.serializers import ListSerializer, UserSerializer, BroughtBy, BroughtTo
-from rest_framework import permissions
+from rest_framework import permissions, status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+from .utils.total_expense import collect_item
 
 # Create your views here.
 
@@ -61,5 +64,20 @@ class UserBroughtTo(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
 
-
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def user_expense(pk):
+    try:
+        data = collect_item(pk)
+        return Response(data=data, status=status.HTTP_200_OK)
+    except User.DoesNotExist:
+        return Response(
+            {"error": "User not found"}, 
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {"error": str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 

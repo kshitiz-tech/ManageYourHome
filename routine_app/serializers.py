@@ -37,4 +37,6 @@ class BroughtTo(serializers.ModelSerializer):
         model = List
         fields = ['brought_to']
 
+#serialize the response comming from the expenseview()
+
 
