@@ -66,7 +66,7 @@ class UserBroughtTo(generics.RetrieveAPIView):
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
-def user_expense(pk):
+def user_expense(request, pk):
     try:
         data = collect_item(pk)
         return Response(data=data, status=status.HTTP_200_OK)
