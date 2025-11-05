@@ -4,12 +4,8 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 
 urlpatterns = [
-    # Authentication endpoints
-    path('auth/register/', views.RegisterView.as_view(), name='register'),
-    path('auth/login/', views.LoginView.as_view(), name='login'),
-    path('auth/logout/', views.LogoutView.as_view(), name='logout'),
-    path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    
+    # JWT Authentication endpoints
+    path("token/",views.MyTokenObtainPairView.as_view(),name = 'get_token'),
     # List endpoints
     path('', views.ListLists.as_view(), name='lists'),
     path('list/details/<int:pk>', views.Lists_Details.as_view(), name='list_detail'),
