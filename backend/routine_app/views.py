@@ -1,75 +1,92 @@
-
-from rest_framework import generics
-from django.contrib.auth.models import User
-from django.contrib.auth import authenticate
-from routine_app.models import List
-from routine_app.serializers import (
-    ListSerializer, MyTokenObtainPairSerializer, UserSerializer, BroughtBy, BroughtTo,
-    RegisterSerializer, LoginResponseSerializer
-)
-from rest_framework import permissions, status
+from rest_framework import generics, permissions, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
-from .utils.total_expense import collect_item
+from django.contrib.auth.models import User
+from routine_app.models import List, Item
+from routine_app.serializers import (
+    UserSerializer, ListSerializer, MyTokenObtainPairSerializer, ItemSerializer
+)
+from routine_app.utils.total_expense import collect_item
+from rest_framework_simplejwt.views import TokenObtainPairView
+import inspect
 
-# Create your views here.
 
-# JWT Authentication Views
+
+
 class CreateUserView(generics.CreateAPIView):
     queryset = User.objects.all()
-    serializer_class = RegisterSerializer
+    serializer_class = UserSerializer
     permission_classes = [permissions.AllowAny]
 
 
-   
-#this view is to list all the items of the user
-class ListLists(generics.ListAPIView):
-    queryset = List.objects.all()
-    serializer_class = ListSerializer
+class ItemView(generics.ListAPIView):
+    queryset = Item.objects.all()
+    serializer_class = ItemSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-#this view is to create the items
-class CreateList(generics.CreateAPIView):
-    
-    queryset = List.objects.all()
+
+class ItemDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Item.objects.all()
+    serializer_class = ItemSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+
+class ListListCreateView(generics.ListCreateAPIView):
+    queryset = List.objects.prefetch_related('items')
     serializer_class = ListSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        serializer.save(owner = self.request.user)
-    
+        serializer.save(owner=self.request.user)
 
-#this view is for each item in the list for retrieving updating and destroying 
-class Lists_Details(generics.RetrieveUpdateDestroyAPIView):
 
-    def get_queryset(self, pk):
-        return List.objects.get(pk = pk)
-    
+class ListDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = List.objects.prefetch_related('items')
     serializer_class = ListSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-#this view is for specific listing of items for which the user has brought
-class UserBroughtBy(generics.RetrieveAPIView):
+    def retrieve(self, request, *args, **kwargs):
+        list_obj = self.get_object()
+        serializer = self.get_serializer(list_obj)
+        print("collect_item loaded from:", inspect.getfile(collect_item))
+        collected_data = collect_item(instance=list_obj)
 
-    def get_queryset(self,pk):
-        user = User.objects.get(id = pk)
-        return  user.brought_by.all()
-  
-    serializer_class = BroughtBy
+        return Response({
+            "list": serializer.data,
+            "totals": collected_data
+        })
+
+
+class UserBroughtByView(generics.ListAPIView):
+    serializer_class = ItemSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-#this view is for specific listing of list for which the items were brought to the user by the user himself or the other user 
-class UserBroughtTo(generics.RetrieveAPIView):
-    
-    def get_queryset(self,pk):
-        user = User.objects.get(id = pk)
-        return user.brought_to_you.all()
+    def get_queryset(self):
+        user_id = self.kwargs['pk']
+        return Item.objects.filter(brought_by__id=user_id)
+
+
+class UserBroughtToView(generics.ListAPIView):
+    serializer_class = ItemSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user_id = self.kwargs['pk']
+        return Item.objects.filter(brought_to__id=user_id)
     
 
-    serializer_class = BroughtTo
+class ListItemView(generics.ListCreateAPIView):
+    serializer_class = ItemSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        list_id = self.kwargs['list_id']
+        return Item.objects.filter(list__id=list_id)
+
+    def perform_create(self, serializer):
+        list_id = self.kwargs['list_id']
+        list_instance = List.objects.get(id=list_id)
+        serializer.save(list=list_instance)
 
 
 @api_view(['GET'])
@@ -79,18 +96,10 @@ def user_expense(request, pk):
         data = collect_item(pk)
         return Response(data=data, status=status.HTTP_200_OK)
     except User.DoesNotExist:
-        return Response(
-            {"error": "User not found"}, 
-            status=status.HTTP_404_NOT_FOUND
-        )
+        return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
-        return Response(
-            {"error": str(e)}, 
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
-from rest_framework_simplejwt.views import TokenObtainPairView
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer

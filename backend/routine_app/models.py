@@ -13,6 +13,15 @@ from django.contrib.auth.models import User
 class List(models.Model):
 
     #defining category for choices used in category field
+    list_name = models.CharField(max_length= 100, default= f"List created on {timezone.now().date()}")
+    created_at = models.DateTimeField(auto_now_add=True)
+    owner = models.ForeignKey(User, related_name='lists', on_delete=models.CASCADE)
+
+
+    def __str__(self):
+        return self.list_name
+
+class Item(models.Model):
     class Category(models.TextChoices):
         GROCERIES = "groceries", "Groceries"
         Other = "other", "Other"
@@ -21,13 +30,15 @@ class List(models.Model):
                                 choices= Category.choices,
                                 blank = False,
                                 null= False)
-    price = models.DecimalField(null= False, blank= False, decimal_places= 2, max_digits= 10000)
+    
+
+    list = models.ForeignKey(List, related_name= 'items', on_delete= models.CASCADE)
+    price = models.DecimalField(null= False, blank= False, decimal_places= 2, max_digits= 1000)
     #foreign key to User model and related name for reverse lookup
     brought_by = models.ForeignKey(User, related_name= 'brought_by', on_delete= models.CASCADE )
-    brought_to = models.ManyToManyField(User,related_name="brought_to_you", blank= False)
+    brought_to = models.ManyToManyField(User,related_name="brought_to", blank= False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.item_name
-
-
+        return f'{self.item_name} - {self.category} - {self.price}'
+    

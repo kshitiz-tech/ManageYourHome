@@ -1,65 +1,35 @@
-from ..models import List, User
+from ..models import List, User, Item
 from decimal import Decimal
 
 
-#three views:
-'''
--> basic view: 
-  -> all items listed if user brought it : ( items.brought_by == user)
-    -> for each item in all items:
-      -> base_price = item.price
-      -> category = {grocery, other}
-      -> if category == grocery:
-        -> tax = base_price * 0.05
-      -> else:
-        -> tax = base_price * 0.07
-      -> item_price  = tax + base_price
-      -> total_tax +-= tax
-      -> total_price += item_price
-      -> brought_to = [ user1, user2, user3]
-      -> each_owned = item_price/len(brought_to)
-      user_owned = {}
-      -> for user in brought_to:
-        -> user_owned[user] = each_owned
 
-      
-    
-
-
-
-
-'''
 def to_decimal(value):
     return Decimal(str(value or 0)).quantize(Decimal("0.01"))
 
 
-def collect_item(pk):
+def collect_item(pk = None, instance = None):
     data  = []
     total_price = Decimal("0.00")
     total_price_without_tax = Decimal("0.00")
     total_tax = Decimal("0.00")
     value_shared = Decimal("0.00")
-    try:
-        user = User.objects.get(pk = pk)
-    except User.DoesNotExist:
-        raise
-    
 
-    #try related_name to extract items 
-    try: 
+    if isinstance(instance, Item):
+        items_in_list = [instance]
+    elif isinstance(instance, List):
+        items_in_list = instance.items.all()
+
+    elif pk:
+        try:
+
+            user = User.objects.get(pk = pk)
+        except User.DoesNotExist:
+            raise
         items_in_list = user.brought_by.all()
     
-    except Exception:
-        #if not by related_name,try by foreign key
-        try: 
-            field = List._meta.get_field("brought_by")
-            if getattr(field, "is_relation", False):
-                items_in_list= List.objects.filter(brought_by = user) #by foregin key
-            else:
-                items_in_list = List.objects.filter(brought_by = user.username) #by username strin
-        except Exception:
-            raise
-
+    else:
+        items_in_list = []
+    
     #for every item 
     for item in items_in_list:
         
@@ -98,9 +68,9 @@ def collect_item(pk):
      
     return {
         "item_data": data,
-        "total_expense": total_price.quantize(Decimal("0.01")),
-        "total_expense_without_tax": total_price_without_tax.quantize(Decimal("0.01")),
-        "total_tax": total_tax.quantize(Decimal("0.01"))
+        "total_expense": str(total_price.quantize(Decimal("0.01"))),
+        "total_expense_without_tax": str(total_price_without_tax.quantize(Decimal("0.01"))),
+        "total_tax": str(total_tax.quantize(Decimal("0.01")))
     }
 
       

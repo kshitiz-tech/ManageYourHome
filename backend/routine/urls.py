@@ -16,14 +16,20 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from routine_app.views import CreateUserView
+from routine_app import views
 from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
+
     path('admin/', admin.site.urls),
-    path('api/user/register/',CreateUserView.as_view(),name = 'register'),
+    path('user/register/',views.CreateUserView.as_view(),name = 'register'),
     path("api/token/refresh",TokenRefreshView.as_view(),name = 'refresh_token'),
-    path('lists/', include('routine_app.urls')),
-    path('api-auth/', include('rest_framework.urls'))
+    path('api/lists/', include('routine_app.urls')),
+    path('api-auth/', include('rest_framework.urls')),
+    path("api/token/",views.MyTokenObtainPairView.as_view(),name = 'get_token'),
+        # User specific endpoints
+    path('user/brought_by/<int:pk>', views.UserBroughtByView.as_view(), name='brought_by'),
+    path('user/brought_to/<int:pk>', views.UserBroughtToView.as_view(), name='brought_to_you'),
+    path('user/expense/<int:pk>/', views.user_expense, name='user_expense'),
 
 ]
