@@ -13,10 +13,21 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class ItemSerializer(serializers.ModelSerializer):
+    brought_by = UserSerializer(read_only= True)
+    brought_to = UserSerializer(many= True, read_only= True)
     calculated_data = serializers.SerializerMethodField()
     class Meta:
         model = Item
-        fields = "__all__"
+        fields = [
+            'id',
+            'item_name',
+            'category',
+            'price',
+            'brought_by',
+            'brought_to',
+            'created_at'
+        ]
+
         extra_fields = ["calculated_data"]
 
     def get_calculated_data(self, obj):
@@ -28,10 +39,12 @@ class ItemSerializer(serializers.ModelSerializer):
         return None
 
 class ListSerializer(serializers.ModelSerializer):
-    owner = serializers.ReadOnlyField(source = "owner.username")
+    items = ItemSerializer(many= True, read_only= True)
+
+
     class Meta:
         model = List
-        fields = ['list_name','created_at','owner','items']
+        fields = ['id','list_name','created_at','items']
 
 
 class BroughtBy(serializers.ModelSerializer):

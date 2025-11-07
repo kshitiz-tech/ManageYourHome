@@ -8,7 +8,8 @@ urlpatterns = [
     # List endpoints
     path('', views.ListListCreateView.as_view(), name='list-list'),
     path('<int:pk>/', views.ListDetailView.as_view(), name='list-detail'),
-
+    path('brought_by/<int:pk>', views.UserBroughtByView.as_view(), name='brought_by'),
+    path('brought_to/<int:pk>', views.UserBroughtToView.as_view(), name='brought_to_you'),
     # Item endpoints
     path('<int:list_id>/items/', views.ListItemView.as_view(), name='list-items'),
     path('items/', views.ItemView.as_view(), name='item-list'),
