@@ -86,7 +86,7 @@ class ListItemView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         list_id = self.kwargs['list_id']
         list_instance = List.objects.get(id=list_id)
-        serializer.save(list=list_instance)
+        serializer.save(list=list_instance, brought_by =self.request.user)
 
 
 @api_view(['GET'])

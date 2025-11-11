@@ -14,7 +14,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 class ItemSerializer(serializers.ModelSerializer):
     brought_by = UserSerializer(read_only= True)
-    brought_to = UserSerializer(many= True, read_only= True)
+    brought_to = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(),many = True )
     calculated_data = serializers.SerializerMethodField()
     class Meta:
         model = Item
@@ -25,10 +25,9 @@ class ItemSerializer(serializers.ModelSerializer):
             'price',
             'brought_by',
             'brought_to',
-            'created_at'
+            'created_at',
+            'calculated_data'
         ]
-
-        extra_fields = ["calculated_data"]
 
     def get_calculated_data(self, obj):
 
@@ -37,6 +36,22 @@ class ItemSerializer(serializers.ModelSerializer):
             return result["item_data"][0]
         
         return None
+    
+    def create(self, validated_data):
+        brought_to = validated_data.pop('brought_to', [])
+        item = Item.objects.create(**validated_data)
+        if brought_to:
+            item.brought_to.set(brought_to)
+        return item
+
+    def update(self, instance, validated_data):
+        brought_to = validated_data.pop('brought_to', None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        if brought_to is not None:
+            instance.brought_to.set(brought_to)
+        return instance
 
 class ListSerializer(serializers.ModelSerializer):
     items = ItemSerializer(many= True, read_only= True)
