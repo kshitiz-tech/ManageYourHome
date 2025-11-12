@@ -24,6 +24,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/user/register/',views.CreateUserView.as_view(),name = 'register'),
     path("api/token/refresh",TokenRefreshView.as_view(),name = 'refresh_token'),
+    path('api/users/', views.UserListView.as_view(), name='user-list'),
     path('api/lists/', include('routine_app.urls')),
     path('api-auth/', include('rest_framework.urls')),
     path("api/token/",views.MyTokenObtainPairView.as_view(),name = 'get_token'),

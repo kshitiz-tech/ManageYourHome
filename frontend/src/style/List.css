@@ -1,21 +1,21 @@
 
   
-  .task-container {
+  .list-container {
     padding: 10px;
     margin: 20px 0;
     border: 1px solid #ccc;
     border-radius: 5px;
   }
   
-  .task-title {
+  .list-title {
     color: #333;
   }
   
-  .task-content {
+  .list-content {
     color: #666;
   }
   
-  .task-date {
+  .list-date {
     color: #999;
     font-size: 0.8rem;
   }
@@ -34,7 +34,7 @@
     background-color: #d32f2f; /* Darker red */
   }
 
-.TaskForm {
+.listForm {
     padding:20px auto;
     margin:20px auto;
     align-items: center;

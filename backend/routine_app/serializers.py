@@ -13,9 +13,16 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class ItemSerializer(serializers.ModelSerializer):
-    brought_by = UserSerializer(read_only= True)
-    brought_to = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(),many = True )
+    brought_by = UserSerializer(read_only=True)
+    brought_to = UserSerializer(many=True, read_only=True)
+    brought_to_ids = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        many=True,
+        write_only=True,
+        source='brought_to'
+    )
     calculated_data = serializers.SerializerMethodField()
+    
     class Meta:
         model = Item
         fields = [
@@ -25,6 +32,7 @@ class ItemSerializer(serializers.ModelSerializer):
             'price',
             'brought_by',
             'brought_to',
+            'brought_to_ids',
             'created_at',
             'calculated_data'
         ]

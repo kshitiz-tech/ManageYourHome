@@ -1,6 +1,6 @@
 import { useState } from "react";
 import api from "../api/api";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constant";
 import "../style/Login.css";
 import LoadingIndicator from "./LoadingIndicator";
@@ -16,11 +16,13 @@ const Form = ({ route, method }: Props) => {
     password: "",
   });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const navigate = useNavigate();
 
   const handleSubmit = async (e: { preventDefault: () => void }) => {
     setLoading(true);
+    setError("");
     e.preventDefault();
 
     try {
@@ -29,88 +31,99 @@ const Form = ({ route, method }: Props) => {
         password: userDetail.password,
       });
 
-      if (res.status == 200) {
-      }
-
       if (method === "login") {
         localStorage.setItem(ACCESS_TOKEN, res.data.access);
         localStorage.setItem(REFRESH_TOKEN, res.data.refresh);
         navigate("/home");
       } else {
-        localStorage.clear()
+        localStorage.clear();
         navigate("/login");
       }
-    } catch (error) {
-      alert(error);
-      console.log(import.meta.env.VITE_API_URL);
+    } catch (error: any) {
+      setError(error?.response?.data?.detail || "An error occurred. Please try again.");
+      console.error(error);
     } finally {
       setLoading(false);
     }
   };
 
-  //for display
   const name = method === "login" ? "Login" : "Register";
+  const altText = method === "login" ? "Don't have an account?" : "Already have an account?";
+  const altLink = method === "login" ? "/register" : "/login";
+  const altLinkText = method === "login" ? "Sign up" : "Login";
+
   return (
-    <div className="login-container">
-
-      <section className="py-5">
-        <div className="container px-5">
-          <div className="bg-light rounded-4 py-5 px-4 px-md-5">
-            <div className="text-center mb-5">
-              <h1 className="fw-bolder">{name}</h1>
-            </div>
-            <div className="row gx-5 justify-content-center">
-              <div className="col-lg-8 col-xl-6"></div>
-              <form onSubmit={handleSubmit}>
-                <div className="mb-3">
-                  <label htmlFor="exampleInputEmail1" className="form-label">
-                    Username
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={userDetail.username}
-                    onChange={(event) => {
-                      setUserDetail({
-                        ...userDetail,
-                        username: event.target.value,
-                      });
-                    }}
-                  />
-
-                  <div id="emailHelp" className="form-text"></div>
-                </div>
-                <div className="mb-3">
-                  <label htmlFor="exampleInputPassword1" className="form-label">
-                    Password
-                  </label>
-                  <input
-                    type="password"
-                    className="form-control"
-                    id="exampleInputPassword1"
-                    required
-                    value={userDetail.password}
-                    onChange={(e) => {
-                      setUserDetail({
-                        ...userDetail,
-                        password: e.target.value,
-                      });
-                    }}
-                  />
-                </div>
-                
-
-                <div className="d-grid">
-                <button type="submit" className="btn btn-primary">
-                  Submit
-                </button>
-                </div>
-                {loading && <LoadingIndicator/>}
-              </form>
-            </div>
+    <div className="auth-container">
+      <div className="auth-card">
+        <div className="auth-header">
+          <div className="auth-icon">
+            <svg width="48" height="48" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="32" height="32" rx="8" fill="url(#gradient)"/>
+              <path d="M16 8L8 14V24H12V18H20V24H24V14L16 8Z" fill="white"/>
+              <defs>
+                <linearGradient id="gradient" x1="0" y1="0" x2="32" y2="32">
+                  <stop offset="0%" stopColor="#DC143C"/>
+                  <stop offset="100%" stopColor="#00B7EB"/>
+                </linearGradient>
+              </defs>
+            </svg>
           </div>
+          <h1 className="auth-title">{name}</h1>
+          <p className="auth-subtitle">Welcome to ManageYourHome</p>
         </div>
-      </section>
+
+        <form onSubmit={handleSubmit} className="auth-form">
+          {error && (
+            <div className="alert alert-danger alert-modern" role="alert">
+              {error}
+            </div>
+          )}
+
+          <div className="form-group-modern">
+            <label className="form-label-modern">Username</label>
+            <input
+              type="text"
+              className="form-control-modern"
+              value={userDetail.username}
+              onChange={(event) => {
+                setUserDetail({
+                  ...userDetail,
+                  username: event.target.value,
+                });
+              }}
+              placeholder="Enter your username"
+              required
+            />
+          </div>
+
+          <div className="form-group-modern">
+            <label className="form-label-modern">Password</label>
+            <input
+              type="password"
+              className="form-control-modern"
+              value={userDetail.password}
+              onChange={(e) => {
+                setUserDetail({
+                  ...userDetail,
+                  password: e.target.value,
+                });
+              }}
+              placeholder="Enter your password"
+              required
+            />
+          </div>
+
+          <button type="submit" className="btn-submit-modern" disabled={loading}>
+            {loading ? <LoadingIndicator /> : name}
+          </button>
+        </form>
+
+        <div className="auth-footer">
+          <p className="auth-alt-text">
+            {altText} <Link to={altLink} className="auth-alt-link">{altLinkText}</Link>
+          </p>
+        </div>
+      </div>
     </div>
   );
 };
