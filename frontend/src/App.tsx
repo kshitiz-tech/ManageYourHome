@@ -9,6 +9,7 @@ import Layout_User from "./components/UserLayout";
 import ListDetail from "./components/List";
 import ListForm from "./pages/ListForm";
 import ItemForm from "./pages/ItemForm";
+import ListItemsEdit from "./pages/ListItemsEdit";
 import "./App.css";
 
 function App() {
@@ -45,6 +46,14 @@ function App() {
             element={
               <Protected>
                 <ListDetail />
+              </Protected>
+            }
+          />
+          <Route
+            path="/lists/:id/edit-items"
+            element={
+              <Protected>
+                <ListItemsEdit />
               </Protected>
             }
           />

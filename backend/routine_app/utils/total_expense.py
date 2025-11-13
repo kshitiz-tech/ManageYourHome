@@ -1,10 +1,17 @@
 from ..models import List, User, Item
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
 
 
 def to_decimal(value):
     return Decimal(str(value or 0)).quantize(Decimal("0.01"))
+
+
+def walmart_round(amount):
+    """
+    Round to nearest nickel (0.05) like Walmart does for cash transactions.
+    """
+    return (amount / Decimal("0.05")).quantize(Decimal("1"), rounding=ROUND_HALF_UP) * Decimal("0.05")
 
 
 def collect_item(pk = None, instance = None):
@@ -68,9 +75,9 @@ def collect_item(pk = None, instance = None):
      
     return {
         "item_data": data,
-        "total_expense": str(total_price.quantize(Decimal("0.01"))),
-        "total_expense_without_tax": str(total_price_without_tax.quantize(Decimal("0.01"))),
-        "total_tax": str(total_tax.quantize(Decimal("0.01")))
+        "total_expense": str(walmart_round(total_price)),
+        "total_expense_without_tax": str(walmart_round(total_price_without_tax)),
+        "total_tax": str(walmart_round(total_tax))
     }
 
       
