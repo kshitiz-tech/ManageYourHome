@@ -133,6 +133,7 @@ cython_debug/
 # VS Code
 .vscode/
 *.code-workspace
+.codex
 
 # Operating System Files
 .DS_Store

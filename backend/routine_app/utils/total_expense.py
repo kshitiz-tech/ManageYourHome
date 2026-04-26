@@ -59,9 +59,10 @@ def collect_item(pk = None, instance = None):
         shared_users = item.brought_to.all()
         brought_to_count = shared_users.count()
   
-        value_shared = (item_price / Decimal(str(brought_to_count))).quantize(Decimal("0.01"))
-        for user in shared_users:
-          share[user.username] = share.get(user.username, Decimal("0.00")) + value_shared
+        if brought_to_count > 0:
+            value_shared = (item_price / Decimal(str(brought_to_count))).quantize(Decimal("0.01"))
+            for user in shared_users:
+                share[user.username] = share.get(user.username, Decimal("0.00")) + value_shared
     
         data.append({
             "id": getattr(item, "id", None),

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import api from "../api/api";
+import axios from "axios";
 
 interface Row {
   localId: string;
@@ -86,11 +87,17 @@ const ItemForm = () => {
       alert("Missing list id");
       return;
     }
+    const invalidNameIndex = rows.findIndex((row) => !row.item_name.trim());
+    if (invalidNameIndex !== -1) {
+      alert(`Row ${invalidNameIndex + 1}: item name is required`);
+      return;
+    }
+
     setLoading(true);
     try {
       for (const row of rows) {
-        const payload: any = {
-          item_name: row.item_name,
+        const payload = {
+          item_name: row.item_name.trim(),
           category: row.category,
           price: row.price,
           brought_to_ids: row.brought_to_ids && row.brought_to_ids.length > 0 ? row.brought_to_ids : [],
@@ -105,7 +112,11 @@ const ItemForm = () => {
       navigate(`/lists/${listId}`);
     } catch (err) {
       console.error(err);
-      alert("Failed to save items");
+      if (axios.isAxiosError(err) && err.response?.data) {
+        alert(`Failed to save items: ${JSON.stringify(err.response.data)}`);
+      } else {
+        alert("Failed to save items");
+      }
     } finally {
       setLoading(false);
     }

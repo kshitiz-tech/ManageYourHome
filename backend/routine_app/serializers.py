@@ -19,7 +19,8 @@ class ItemSerializer(serializers.ModelSerializer):
         queryset=User.objects.all(),
         many=True,
         write_only=True,
-        source='brought_to'
+        source='brought_to',
+        required=False
     )
     calculated_data = serializers.SerializerMethodField()
     

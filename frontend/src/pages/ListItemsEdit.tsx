@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import api from "../api/api";
 
 interface User {
@@ -47,7 +47,6 @@ interface UserTotal {
 
 const ListItemsEdit = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const [list, setList] = useState<ListType | null>(null);
   const [totals, setTotals] = useState<TotalsType | null>(null);
   const [loading, setLoading] = useState(false);

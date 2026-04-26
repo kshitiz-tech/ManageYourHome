@@ -1,5 +1,6 @@
 from rest_framework import generics, permissions, status
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from django.contrib.auth.models import User
 from routine_app.models import List, Item
@@ -11,6 +12,10 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 import inspect
 
 
+class RecentListPagination(PageNumberPagination):
+    page_size = 7
+    page_size_query_param = "page_size"
+    max_page_size = 50
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -38,9 +43,10 @@ class ItemDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class ListListCreateView(generics.ListCreateAPIView):
-    queryset = List.objects.prefetch_related('items')
+    queryset = List.objects.prefetch_related('items').order_by('-created_at')
     serializer_class = ListSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = RecentListPagination
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
